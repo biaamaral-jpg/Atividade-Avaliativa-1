@@ -4,6 +4,7 @@ import {
     StyleSheet,
     Text,
     TextInput,
+    Image,
     View
 } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,6 +14,15 @@ export default function PokemonSearch() {
     const [searchQuery, setSearchQuery] = useState("");
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
+
+    const [pokemon, setPokemon] = useState<{
+        pokemon_name: string;
+        pokemon_id: number;
+        pokemon_image: string;
+        types: string[];
+        description?: string;
+    } | null>(null);
+
 
     const handleSearch = async () => {
         if (!searchQuery.trim()) return;
@@ -25,21 +35,14 @@ export default function PokemonSearch() {
             const result = await PokemonRequests.fetchPokemonData(searchQuery);
 
             if (result) {
-                console.log("=========================================");
-                console.log("POKÉMON ENCONTRADO!");
-                console.log(`- Nome: ${result.pokemon_name}`);
-                console.log(`- ID: ${result.pokemon_id}`);
-                console.log(`- URL da Imagem: ${result.pokemon_image}`);
-                console.log(`- Tipagem: ${result.types.join(", ")}`);
-                console.log(`- Descrição: ${result.description || "Nenhuma descrição encontrada."}`);
-                console.log("=========================================");
-
+                setPokemon(result);
                 setSearchQuery("");
             } else {
+                setPokemon(null);
                 setErrorMsg("Pokémon não encontrado. Verifique o nome ou número.");
             }
         } catch (error) {
-            setErrorMsg("Erro ao buscar o Pokémon. Tente novamente.");
+            setPokemon(null);
             console.error(error);
         } finally {
             setLoading(false);
@@ -52,7 +55,7 @@ export default function PokemonSearch() {
                 <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}>PokéSearch 🔍</Text>
 
                 <Text style={{ marginBottom: 20 }}>
-                    Atividade Avaliativa: busque um Pokémon pelo nome ou número.
+                busque um Pokémon pelo nome ou número.
                 </Text>
 
                 <TextInput
@@ -68,21 +71,73 @@ export default function PokemonSearch() {
 
                 {errorMsg ? <Text style={{ color: "red", marginTop: 10 }}>{errorMsg}</Text> : null}
 
-                {/* Exibir as informações aqui */}
+                {pokemon && (
+                    <View>
+                        <Image
+                            source={{ uri: pokemon.pokemon_image }}
+                            style={{ width: 150, height: 150 }}
+                        />
+                        <Text style={{ fontSize: 20, fontWeight: "bold" }}>
+                            {pokemon.pokemon_name} (#{pokemon.pokemon_id})
+                        </Text>
+
+                        <View style={{ flexDirection: "row", marginTop: 8 }}>
+                            {pokemon.types.map((type) => (
+                                <View
+                                    key={type}
+                                    style={{
+                                        backgroundColor: TYPE_COLORS[type] || "#777",
+                                        paddingVertical: 4,
+                                        paddingHorizontal: 10,
+                                        borderRadius: 12,
+                                        marginRight: 6,
+                                    }}
+                                >
+                                    <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 12 }}>
+                                        {type.toUpperCase()}
+                                    </Text>
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+                )}
+
+
             </View>
-        </SafeAreaView>
+        </SafeAreaView >
     );
 }
 
 const styles = StyleSheet.create({
     input: {
-        backgroundColor: "#e1e1e6",
-        color: "#121214",
+        backgroundColor: "#ffffff",
+        color: "#333033",
         fontSize: 16,
         borderRadius: 6,
         padding: 16,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: "#323238",
+        borderColor: "#0f0f0f",
     },
+
 });
+const TYPE_COLORS: Record<string, string> = {
+    normal: "#b5ffbf",
+    fire: "#ffafac",
+    water: "#92b1f7",
+    electric: "#fff1b8",
+    grass: "#ffd0fb",
+    ice: "#bed8ff",
+    fighting: "#ff8d87",
+    poison: "#9abdff",
+    ground: "#ffe394",
+    flying: "#c4b0ff",
+    psychic: "#ffaac4",
+    bug: "#f6ffa0",
+    rock: "#ffadc6",
+    ghost: "#b3ddff",
+    dragon: "#a2d5ff",
+    dark: "#c1bcff",
+    steel: "#ffffff",
+    fairy: "#ffc5d2",
+};
