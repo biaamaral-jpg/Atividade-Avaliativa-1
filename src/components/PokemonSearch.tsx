@@ -1,30 +1,26 @@
 import React, { useState } from "react";
 import {
+    Image,
     Keyboard,
+    Pressable,
     StyleSheet,
     Text,
     TextInput,
-    Image,
     View
 } from "react-native";
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PokemonRequests from "../services/PokemonRequests";
 
 export default function PokemonSearch() {
+
     const [searchQuery, setSearchQuery] = useState("");
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
-
-    const [pokemon, setPokemon] = useState<{
-        pokemon_name: string;
-        pokemon_id: number;
-        pokemon_image: string;
-        types: string[];
-        description?: string;
-    } | null>(null);
-
+    const [pokemon, setPokemon] = useState<any>(null);
 
     const handleSearch = async () => {
+
         if (!searchQuery.trim()) return;
 
         setLoading(true);
@@ -39,105 +35,213 @@ export default function PokemonSearch() {
                 setSearchQuery("");
             } else {
                 setPokemon(null);
-                setErrorMsg("Pokémon não encontrado. Verifique o nome ou número.");
+                setErrorMsg("Pokémon não encontrado.");
             }
+
         } catch (error) {
             setPokemon(null);
-            console.error(error);
+            setErrorMsg("Erro ao buscar Pokémon.");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, padding: 20 }}>
-            <View>
-                <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}>PokéSearch 🔍</Text>
 
-                <Text style={{ marginBottom: 20 }}>
-                busque um Pokémon pelo nome ou número.
+        <SafeAreaView style={styles.container}>
+
+            <Text style={styles.title}>
+                PokéSearch
+            </Text>
+
+            <Text style={styles.subtitle}>
+                 busque um Pokémon pelo nome ou número.
+            </Text>
+
+            <TextInput
+                style={styles.input}
+                placeholder="Nome ou número"
+                placeholderTextColor="#888"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoCapitalize="none"
+            />
+
+            <Pressable
+                style={styles.button}
+                onPress={handleSearch}
+            >
+                <Text style={styles.buttonText}>
+                    {loading ? "Buscando..." : "Buscar"}
                 </Text>
+            </Pressable>
 
-                <TextInput
-                    style={styles.input}
-                    placeholder="Digite o nome ou ID (ex: bulbasaur ou 1)"
-                    placeholderTextColor="#8d8d99"
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    onSubmitEditing={handleSearch}
-                />
+            {errorMsg ? (
+                <Text style={styles.error}>{errorMsg}</Text>
+            ) : null}
 
-                {errorMsg ? <Text style={{ color: "red", marginTop: 10 }}>{errorMsg}</Text> : null}
+            {pokemon && (
+                <View style={styles.card}>
 
-                {pokemon && (
-                    <View>
-                        <Image
-                            source={{ uri: pokemon.pokemon_image }}
-                            style={{ width: 150, height: 150 }}
-                        />
-                        <Text style={{ fontSize: 20, fontWeight: "bold" }}>
-                            {pokemon.pokemon_name} (#{pokemon.pokemon_id})
-                        </Text>
+                    <Text style={styles.foundText}>
+                        Pokémon encontrado
+                    </Text>
 
-                        <View style={{ flexDirection: "row", marginTop: 8 }}>
-                            {pokemon.types.map((type) => (
-                                <View
-                                    key={type}
-                                    style={{
-                                        backgroundColor: TYPE_COLORS[type] || "#777",
-                                        paddingVertical: 4,
-                                        paddingHorizontal: 10,
-                                        borderRadius: 12,
-                                        marginRight: 6,
-                                    }}
-                                >
-                                    <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 12 }}>
-                                        {type.toUpperCase()}
-                                    </Text>
-                                </View>
-                            ))}
-                        </View>
+                    <Image
+                        style={styles.image}
+                        source={{ uri: pokemon.pokemon_image }}
+                    />
+
+                    <Text style={styles.name}>
+                        {pokemon.pokemon_name}
+                    </Text>
+
+                    <Text style={styles.id}>
+                        ID: #{pokemon.pokemon_id}
+                    </Text>
+
+                    <Text style={styles.typeLabel}>
+                        Tipo:
+                    </Text>
+
+                    <View style={styles.typesContainer}>
+                        {pokemon.types.map((type: string, index: number) => (
+                            <View key={index} style={styles.typeBadge}>
+                                <Text style={styles.typeText}>
+                                    {type}
+                                </Text>
+                            </View>
+                        ))}
                     </View>
-                )}
 
+                    <Text style={styles.description}>
+                        {pokemon.description}
+                    </Text>
 
-            </View>
-        </SafeAreaView >
+                </View>
+            )}
+
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    input: {
-        backgroundColor: "#ffffff",
-        color: "#333033",
-        fontSize: 16,
-        borderRadius: 6,
-        padding: 16,
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: "#0f0f0f",
+
+    container: {
+        flex: 1,
+        backgroundColor: "#f0f4ff",
+        padding: 20
     },
 
+    title: {
+        fontSize: 34,
+        fontWeight: "900",
+        textAlign: "center",
+        color: "rgb(202, 227, 255)",
+        marginTop: 10
+    },
+
+    subtitle: {
+        textAlign: "center",
+        color: "#666",
+        marginBottom: 20
+    },
+
+    input: {
+        backgroundColor: "#fff",
+        borderWidth: 2,
+        borderColor: "#b6ceff",
+        borderRadius: 12,
+        padding: 12
+    },
+
+    button: {
+        backgroundColor: "#82acff",
+        padding: 14,
+        borderRadius: 12,
+        marginTop: 10,
+        alignItems: "center"
+    },
+
+    buttonText: {
+        color: "rgb(255, 255, 255)",
+        fontWeight: "bold"
+    },
+
+    error: {
+        color: "#000000",
+        textAlign: "center",
+        marginTop: 10
+    },
+
+    card: {
+        marginTop: 20,
+        backgroundColor: "#a5c3e6ff",
+        borderRadius: 20,
+        padding: 22,
+        alignItems: "center",
+        borderWidth: 10,
+        borderColor: "#ffffff"
+    },
+
+    foundText: {
+        fontSize: 16,
+        fontWeight: "bold",
+        color: "rgb(3, 3, 3)",
+        marginBottom: 10
+    },
+
+    image: {
+        width: 160,
+        height: 160,
+        borderWidth: 5,
+        borderColor: "#ffffff",
+        borderRadius: 15,
+        marginBottom: 10
+    },
+
+    name: {
+        fontSize: 28,
+        fontWeight: "bold",
+        textTransform: "capitalize"
+    },
+
+    id: {
+        fontSize: 14,
+        color: "#666",
+        marginBottom: 10
+    },
+
+    typeLabel: {
+        fontSize: 14,
+        fontWeight: "bold",
+        marginBottom: 5,
+        color: "#333"
+    },
+
+    typesContainer: {
+        flexDirection: "row",
+        gap: 8,
+        marginBottom: 10
+    },
+
+    typeBadge: {
+        backgroundColor: "#000000",
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+        borderRadius: 20
+    },
+
+    typeText: {
+        color: "#fff",
+        fontSize: 12,
+        fontWeight: "bold"
+    },
+
+    description: {
+        textAlign: "center",
+        color: "#444",
+        marginTop: 10
+    }
+
 });
-const TYPE_COLORS: Record<string, string> = {
-    normal: "#b5ffbf",
-    fire: "#ffafac",
-    water: "#92b1f7",
-    electric: "#fff1b8",
-    grass: "#ffd0fb",
-    ice: "#bed8ff",
-    fighting: "#ff8d87",
-    poison: "#9abdff",
-    ground: "#ffe394",
-    flying: "#c4b0ff",
-    psychic: "#ffaac4",
-    bug: "#f6ffa0",
-    rock: "#ffadc6",
-    ghost: "#b3ddff",
-    dragon: "#a2d5ff",
-    dark: "#c1bcff",
-    steel: "#ffffff",
-    fairy: "#ffc5d2",
-};
