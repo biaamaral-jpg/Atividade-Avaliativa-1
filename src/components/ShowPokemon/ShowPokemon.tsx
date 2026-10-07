@@ -1,9 +1,11 @@
 import Pokemon from "@/src/interface/Pokemon";
 import { Image } from "expo-image";
-import { ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 
 interface ShowPokemonProps {
     pokemon: Pokemon;
+    isFavorite?: boolean;
+    onToggleFavorite?: () => void;
 }
 
 const formatName = (name: string) =>
@@ -37,11 +39,30 @@ const getTypeColor = (type?: string) => {
     return palette[type ?? 'normal'] ?? '#A8A878';
 };
 
-export default function ShowPokemon({ pokemon }: ShowPokemonProps) {
+export default function ShowPokemon({ pokemon, isFavorite = false, onToggleFavorite }: ShowPokemonProps) {
     const types = pokemon.types ? [pokemon.types.type1, pokemon.types.type2].filter(Boolean) : [];
 
     return (
         <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+            <View style={{ alignItems: 'center', marginBottom: 12 }}>
+                <Pressable
+                    onPress={onToggleFavorite}
+                    style={{
+                        backgroundColor: isFavorite ? '#FFE5E5' : '#FFF5F5',
+                        borderWidth: 1,
+                        borderColor: isFavorite ? '#F87171' : '#FECACA',
+                        borderRadius: 999,
+                        paddingHorizontal: 18,
+                        paddingVertical: 10,
+                        alignSelf: 'center',
+                    }}
+                >
+                    <Text style={{ color: isFavorite ? '#B91C1C' : '#E53E3E', fontWeight: '700' }}>
+                        {isFavorite ? '♥ Favorito' : '♡ Adicionar aos favoritos'}
+                    </Text>
+                </Pressable>
+            </View>
+
             <Text style={{ fontSize: 28, fontWeight: '800', textAlign: 'center', color: '#1A202C' }}>
                 {formatName(pokemon.pokemon_name)}
             </Text>

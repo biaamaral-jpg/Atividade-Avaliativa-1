@@ -1,5 +1,6 @@
 import ShowPokemon from "@/src/components/ShowPokemon/ShowPokemon";
 import Pokemon from "@/src/interface/Pokemon";
+import { alternarFavorito, ehFavorito } from "@/src/service/FavoritesStorage";
 import Requests from "@/src/service/PokemonsRequests";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -9,6 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function PokemonDetail() {
     const params = useLocalSearchParams<{ id: string }>();
     const [pokemon, setPokemon] = useState<Pokemon | null>(null);
+    const [isFavorite, setIsFavorite] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -19,6 +21,9 @@ export default function PokemonDetail() {
             try {
                 setIsLoading(true);
                 setError(null);
+                const favoriteState = await ehFavorito(Number(params.id));
+                setIsFavorite(favoriteState);
+
                 const data = await Requests.fetchPokemonData(params.id);
 
                 if (data && data.pokemon_info) {
@@ -57,6 +62,13 @@ export default function PokemonDetail() {
         loadPokemonData();
     }, [params.id]);
 
+    const handleToggleFavorite = async () => {
+        if (!params.id) return;
+
+        const next = await alternarFavorito(Number(params.id));
+        setIsFavorite(next);
+    };
+
     if (isLoading) {
         return (
             <SafeAreaView style={styles.center}>
@@ -76,7 +88,11 @@ export default function PokemonDetail() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <ShowPokemon pokemon={pokemon} />
+            <ShowPokemon
+                pokemon={pokemon}
+                isFavorite={isFavorite}
+                onToggleFavorite={handleToggleFavorite}
+            />
         </SafeAreaView>
     );
 }

@@ -11,16 +11,23 @@ import {
     View
 } from "react-native";
 import Pokemon from "../../interface/Pokemon";
+import { alternarFavorito, buscarFavoritos } from "../../service/FavoritesStorage";
 import Requests from "../../service/PokemonsRequests";
 
 export default function ListPokemon() {
     const [pokemons, setPokemons] = useState<Pokemon[]>([]);
     const [filteredPokemons, setFilteredPokemons] = useState<Pokemon[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
+    const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingSearch, setIsLoadingSearch] = useState(false);
     const [isMoreLoading, setIsMoreLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
+
+    const loadFavoriteIds = async () => {
+        const ids = await buscarFavoritos();
+        setFavoriteIds(ids);
+    };
 
     const handleFetchPokemon = async (currentOffset: number, append = false) => {
         try {
@@ -56,6 +63,7 @@ export default function ListPokemon() {
     };
 
     useEffect(() => {
+        loadFavoriteIds();
         handleFetchPokemon(0, false);
     }, []);
 
@@ -99,6 +107,23 @@ export default function ListPokemon() {
         } finally {
             setIsLoadingSearch(false);
         }
+    };
+
+    const handleToggleFavorite = async (pokemonId?: number) => {
+        if (!pokemonId) {
+            return;
+        }
+
+        const wasFavorite = favoriteIds.includes(pokemonId);
+        await alternarFavorito(pokemonId);
+
+        setFavoriteIds((prev) => {
+            if (wasFavorite) {
+                return prev.filter((id) => id !== pokemonId);
+            }
+
+            return [...prev, pokemonId];
+        });
     };
 
     const formatName = (name: string) => {
@@ -167,35 +192,55 @@ export default function ListPokemon() {
                     showsVerticalScrollIndicator={false}
                     columnWrapperStyle={styles.row}
                     contentContainerStyle={styles.listContent}
-                    renderItem={({ item }) => (
-                        <Pressable style={styles.card} onPress={() => item.pokemon_id && router.push(`/pokemon/${item.pokemon_id}` as any)}>
-                            {/* ID Badge */}
-                            <View style={styles.idBadge}>
-                                <Text style={styles.idText}>{formatId(item.pokemon_id)}</Text>
-                            </View>
+                    renderItem={({ item }) => {
+                        const isFavorite = !!item.pokemon_id && favoriteIds.includes(item.pokemon_id);
 
-                            {/* Sprite */}
-                            <View style={styles.imageContainer}>
-                                {item.pokemon_image ? (
-                                    <Image
-                                        source={{ uri: item.pokemon_image }}
-                                        style={styles.pokemonImage}
-                                        contentFit="contain"
-                                        transition={300}
-                                    />
-                                ) : (
-                                    <View style={styles.imagePlaceholder} />
-                                )}
-                            </View>
+                        return (
+                            <Pressable
+                                style={styles.card}
+                                onPress={() => item.pokemon_id && router.push(`/pokemon/${item.pokemon_id}` as any)}
+                            >
+                                {/* ID Badge */}
+                                <View style={styles.idBadge}>
+                                    <Text style={styles.idText}>{formatId(item.pokemon_id)}</Text>
+                                </View>
 
-                            {/* Name */}
-                            <View style={styles.infoContainer}>
-                                <Text style={styles.pokemonName}>
-                                    {formatName(item.pokemon_name)}
-                                </Text>
-                            </View>
-                        </Pressable>
-                    )}
+                                {/* Sprite */}
+                                <View style={styles.imageContainer}>
+                                    {item.pokemon_image ? (
+                                        <Image
+                                            source={{ uri: item.pokemon_image }}
+                                            style={styles.pokemonImage}
+                                            contentFit="contain"
+                                            transition={300}
+                                        />
+                                    ) : (
+                                        <View style={styles.imagePlaceholder} />
+                                    )}
+                                </View>
+
+                                {/* Name */}
+                                <View style={styles.infoContainer}>
+                                    <Text style={styles.pokemonName}>
+                                        {formatName(item.pokemon_name)}
+                                    </Text>
+                                </View>
+
+                                {/* Favorite Button */}
+                                <Pressable
+                                    style={[styles.favoriteButton, isFavorite && styles.favoriteButtonActive]}
+                                    onPress={(event: any) => {
+                                        event?.stopPropagation?.();
+                                        handleToggleFavorite(item.pokemon_id);
+                                    }}
+                                >
+                                    <Text style={[styles.favoriteButtonText, isFavorite && styles.favoriteButtonTextActive]}>
+                                        {isFavorite ? "♥ Favorito" : "♡ Favoritar"}
+                                    </Text>
+                                </Pressable>
+                            </Pressable>
+                        );
+                    }}
                     onEndReached={handleLoadMore}
                     onEndReachedThreshold={0.5}
                     ListFooterComponent={renderFooter}
@@ -323,6 +368,27 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         color: "#2D3748",
         textAlign: "center",
+    },
+    favoriteButton: {
+        marginTop: 12,
+        backgroundColor: "#FFF5F5",
+        borderWidth: 1,
+        borderColor: "#FECACA",
+        borderRadius: 999,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+    },
+    favoriteButtonActive: {
+        backgroundColor: "#FFE5E5",
+        borderColor: "#F87171",
+    },
+    favoriteButtonText: {
+        color: "#E53E3E",
+        fontSize: 11,
+        fontWeight: "700",
+    },
+    favoriteButtonTextActive: {
+        color: "#B91C1C",
     },
     footerLoader: {
         paddingVertical: 20,
